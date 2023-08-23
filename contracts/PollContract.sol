@@ -5,6 +5,7 @@ contract PollContract {
 
     address private ownerAddress;
     mapping(address => bool) internal pollCreators;
+    mapping (address => bool) internal authorisedVoters;
     mapping(address => mapping(string => Poll)) internal pollMapping;
 
     struct Poll {
@@ -67,11 +68,26 @@ contract PollContract {
         _;
     }
 
-    function authrisePollCreator(address pollCreator, bool authorisation)
+    /*
+    modifer to limit voters to authorsed voters
+    */
+    modifier isAllowedToVote{
+        require(authorisedVoters[msg.sender],"You are not authorised to cast votes");
+        _;
+    }
+
+    function authorisePollCreator(address pollCreator, bool authorisation)
         external
         onlyOwner
     {
         pollCreators[pollCreator] = authorisation;
+    }
+
+    function authorisePollVoters(address voter, bool authorisation)
+        external
+        authorisedPollCreator
+    {
+        authorisedVoters[voter] = authorisation;
     }
 
     function getPollByCreator(address pollCreator, string memory pollName)
@@ -92,7 +108,7 @@ contract PollContract {
     function createPoll(
         string memory pollName,
         string memory description,
-        address[] memory candidates
+        address[] memory candidates 
     ) external authorisedPollCreator {
         Poll memory poll;
         poll.description = description;
@@ -104,22 +120,24 @@ contract PollContract {
     function listCandidatesInAPoll( address pollOwner,string memory pollName)
         public
         view
-        authorisedPollCreator
+        authorisedPollCreator isAllowedToVote
         returns (address[] memory)
     {
         Poll storage poll = pollMapping[pollOwner][pollName];
         return poll.canidates;
     }
 
-    function voteCandidateInPoll(address candidate, address pollOwner,string memory pollName) public  hasCastedVote( pollOwner, pollName) {
+    function voteCandidateInPoll(address candidate, address pollOwner,string memory pollName) public  hasCastedVote( pollOwner, pollName) isAllowedToVote {
        Poll storage poll = pollMapping[pollOwner][pollName];
        uint256 candidateIndex = 0;
 
        for(uint256 count = 0; count < poll.canidates.length; count++){
            if(poll.canidates[count] == candidate){
                candidateIndex = count;
+               break;
            }
        }
+       
        poll.candidatesVote[candidateIndex] = poll.candidatesVote[candidateIndex] + 1;
        poll.voters.push(msg.sender);
     }
