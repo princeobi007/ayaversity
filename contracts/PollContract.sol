@@ -111,7 +111,7 @@ contract PollContract {
         address[] memory candidates 
     ) external authorisedPollCreator {
         Poll memory poll;
-        poll.description = description
+        poll.description = description;
         poll.canidates = candidates;
         poll.candidatesVote = new uint256[](candidates.length);
         pollMapping[msg.sender][pollName] = poll;
