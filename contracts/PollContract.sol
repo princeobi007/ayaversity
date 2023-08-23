@@ -11,6 +11,7 @@ contract PollContract {
         string description;
         address[] canidates;
         uint256[] candidatesVote;
+        address[] voters;
     }
 
     // Custom data structure to hold poll information
@@ -56,8 +57,8 @@ contract PollContract {
 
         bool voteCasted = false;
 
-        for (uint256 count = 0; count < poll.canidates.length; count++){
-            if(poll.canidates[count] == msg.sender){
+        for (uint256 count = 0; count < poll.voters.length; count++){
+            if(poll.voters[count] == msg.sender){
                 voteCasted = true;
             }
         }
@@ -100,13 +101,13 @@ contract PollContract {
         pollMapping[msg.sender][pollName] = poll;
     }
 
-    function listCandidatesInAPoll(string memory pollName)
+    function listCandidatesInAPoll( address pollOwner,string memory pollName)
         public
         view
         authorisedPollCreator
         returns (address[] memory)
     {
-        Poll storage poll = pollMapping[msg.sender][pollName];
+        Poll storage poll = pollMapping[pollOwner][pollName];
         return poll.canidates;
     }
 
@@ -120,5 +121,6 @@ contract PollContract {
            }
        }
        poll.candidatesVote[candidateIndex] = poll.candidatesVote[candidateIndex] + 1;
+       poll.voters.push(msg.sender);
     }
 }
